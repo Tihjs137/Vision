@@ -31,7 +31,9 @@ void createTrackbars();
 
 int main(int argc, char *argv[])
 {
-	vision();
+	
+		vision();				//Very clean code :o 
+	
 }
 
 
@@ -41,60 +43,89 @@ int main(int argc, char *argv[])
 
 bool vision()					// create the main loop
 {
+		
 	VideoCapture cap(0);				// open the default camera, should you have a second external camera plugged in you can use "cap(1)" to take the camera
-	if (!cap.isOpened())				// check if we succeeded
-		return -1;						// if not we close the program
+	//if (!cap.isOpened())				// check if we succeeded
+	//	return -1;						// if not we close the program
 
 	params = Setup_blob();
-	createTrackbars();					//Guess what.... this creates trackbars :o
+	createTrackbars();					
 
-
+	
 	Mat frame;							// create the matrix in which the information frame of the camera will be safed
 										// create the windows in which to show your result (multiple options like size)
 	for (;;)							// create an endless for loop to keep the program running on this piece of code 
 	{
-		cap >> frame;					// get a new frame from camera
-		Mat orig_image = frame.clone();		// Clone the input "frame" into the new matrix we made, this way you can use different functions on different images
-		medianBlur(frame, frame, 3);		// blurring the input "frame" this way the filtering of the colors comes out better
-
-		Mat hsv_image;						// create a new matrix for the HSV image
-		cvtColor(frame, hsv_image, COLOR_BGR2HSV);	// Convert input image to HSV
-
-		Mat ColorOnly;						// Create a new matrix
-											// Threshold the HSV image, keep only the color pixels you want. Maybe google what HSV means to see how to use it
-		//inRange(hsv_image, Scalar(100, 100, 70), Scalar(140, 255, 255), ColorOnly); // blue preset
-		inRange(hsv_image, Scalar(H_MIN, S_MIN, V_MIN), Scalar(H_MAX, S_MAX, V_MAX), ColorOnly);
-
-		namedWindow("ColorFilter", WINDOW_AUTOSIZE);
-		imshow("ColorFilter", ColorOnly);			// show the HSV filter output in the window called "ColorFilter"
-		namedWindow("Input", WINDOW_AUTOSIZE);
-		imshow("Input", orig_image);		// show the camera picture in the window called "Input"
-		
-		GaussianBlur(ColorOnly, dst, Size(35, 35), 0, 0);
-
-		//cout << "Before blob \n";
-		Mat blobs = blob(params, ColorOnly);
-		if (!blobs.empty())
+		try
 		{
-			imshow("Blob", blobs);
+			cap >> frame;					// get a new frame from camera
+			if (frame.empty() || !cap.isOpened()) { throw 1;}	// Throws an error when there is no camera feed
+			Mat orig_image = frame.clone();		// Clone the input "frame" into the new matrix we made, this way you can use different functions on different images
+			medianBlur(frame, frame, 3);		// blurring the input "frame" this way the filtering of the colors comes out better
+
+			Mat hsv_image;						// create a new matrix for the HSV image
+			cvtColor(frame, hsv_image, COLOR_BGR2HSV);	// Convert input image to HSV
+
+			Mat ColorOnly;						// Create a new matrix
+												// Threshold the HSV image, keep only the color pixels you want. Maybe google what HSV means to see how to use it
+			//inRange(hsv_image, Scalar(100, 100, 70), Scalar(140, 255, 255), ColorOnly); // blue preset
+			inRange(hsv_image, Scalar(H_MIN, S_MIN, V_MIN), Scalar(H_MAX, S_MAX, V_MAX), ColorOnly);
+
+			namedWindow("ColorFilter", WINDOW_AUTOSIZE);
+			imshow("ColorFilter", ColorOnly);			// show the HSV filter output in the window called "ColorFilter"
+			namedWindow("Input", WINDOW_AUTOSIZE);
+			imshow("Input", orig_image);		// show the camera picture in the window called "Input"
+
+			GaussianBlur(ColorOnly, dst, Size(35, 35), 0, 0);
+
+			//cout << "Before blob \n";
+			Mat blobs = blob(params, ColorOnly);		//it now uses the coloronly result because the blob function can erase / ignore the noise
+			if (!blobs.empty())
+			{
+				imshow("Blob", blobs);
+			}
+			else
+			{
+				throw 0;	//"Error: tried to process an empty blob matrix"
+			}
+
+
+			//show the blurred image with the text
+			imshow("Smoothed Image", dst);
+
+			Canny(dst, Canny_picture, 40, 60, 3);
+			namedWindow("Canny edge", WINDOW_AUTOSIZE);
+			imshow("Canny edge", Canny_picture);			//still doing this for the achieve the output image 
+
+
+			Output = orig_image.clone();
+			Output.setTo(255, Canny_picture);
+			imshow("output", Output);
+
+			if (waitKey(30) >= 0) break;		// if you press any key while in the output window the program will close
+		}
+		catch (int x)							// error handling part
+		{
+			string error;
+			switch (x)
+			{
+			case 0:
+				error = "Error 0: tried to process an empty blob matrix";
+				break;
+			case 1:
+				error = "Error 1: No camera feed available";
+			}
+			cout << error;
+			for (;;) { if (waitKey(30) >= 0) return -1; }
 		}
 		
-		
-		//show the blurred image with the text
-		imshow("Smoothed Image", dst);
-				
-		Canny(dst, Canny_picture, 40, 60, 3);
-		namedWindow("Canny edge", WINDOW_AUTOSIZE);
-		imshow("Canny edge", Canny_picture);
-
-
-		Output = orig_image.clone();
-		Output.setTo(255, Canny_picture);
-		imshow("output", Output);
-
-		if (waitKey(30) >= 0) break;		// if you press any key while in the output window the program will close
 	}
-	return 0; 								// the camera will be deinitialized automatically in VideoCapture destructor
+								// the camera will be deinitialized automatically in VideoCapture destructor
+
+
+	
+	
+	return 0;
 }
 
 Mat blob(SimpleBlobDetector::Params params, Mat im)
