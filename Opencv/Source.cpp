@@ -35,7 +35,7 @@ int main(int, char**)					// create the main loop
 											// Threshold the HSV image, keep only the color pixels you want. Maybe google what HSV means to see how to use it
 		inRange(hsv_image, Scalar(100, 100, 70), Scalar(140, 255, 255), ColorOnly); //
 
-		namedWindow("ColorFilter", WINDOW_AUTOSIZE);
+		//namedWindow("ColorFilter", WINDOW_AUTOSIZE);
 		imshow("ColorFilter", ColorOnly);			// show the HSV filter output in the window called "ColorFilter"
 		namedWindow("Input", WINDOW_AUTOSIZE);
 		imshow("Input", orig_image);		// show the camera picture in the window called "Input"
@@ -48,19 +48,11 @@ int main(int, char**)					// create the main loop
 		putText(dst, zBuffer, Point(ColorOnly.cols / 4, ColorOnly.rows / 8), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(255, 255, 255));
 
 		//show the blurred image with the text
-		imshow("Smoothed Image", dst);
+		//imshow("Smoothed Image", dst);
 				
 		Canny(dst, Canny_picture, 40, 60, 3);
 		namedWindow("Canny edge", WINDOW_AUTOSIZE);
-		imshow("Canny edge", Canny_picture);
-
-
-
-
-
-
-
-
+		//imshow("Canny edge", Canny_picture);
 
 
 		Output = orig_image.clone();
