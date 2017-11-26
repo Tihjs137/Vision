@@ -27,7 +27,7 @@ int V_MAX = 256;
 void on_trackbar(int, void*)
 {}
 void createTrackbars();
-
+float CalculateDist(float d);
 
 int main(int argc, char *argv[])
 {
@@ -58,6 +58,8 @@ bool vision()					// create the main loop
 	{
 		try
 		{
+
+
 			cap >> frame;					// get a new frame from camera
 			if (frame.empty() || !cap.isOpened()) { throw 1;}	// Throws an error when there is no camera feed
 			Mat orig_image = frame.clone();		// Clone the input "frame" into the new matrix we made, this way you can use different functions on different images
@@ -103,6 +105,8 @@ bool vision()					// create the main loop
 			imshow("output", Output);
 
 			if (waitKey(30) >= 0) break;		// if you press any key while in the output window the program will close
+
+
 		}
 		catch (int x)							// error handling part
 		{
@@ -113,10 +117,10 @@ bool vision()					// create the main loop
 				error = "Error 0: tried to process an empty blob matrix";
 				break;
 			case 1:
-				error = "Error 1: No camera feed available";
+				error = "Error 1: No camera feed available"; //We might want to blink a led in this case
 			}
 			cout << error;
-			for (;;) { if (waitKey(30) >= 0) return -1; }
+			for (;;) { if (waitKey(30) >= 0) return -1; } //halts the programm and displays the error, on input the programm closes 
 		}
 		
 	}
@@ -151,8 +155,8 @@ Mat blob(SimpleBlobDetector::Params params, Mat im)
 			float x = keypoints[i].pt.x;
 			float y = keypoints[i].pt.y;
 			float width = keypoints[i].size;
-
-			cout << "Found object number: " << i <<" at  x: " << x << ", y: " << y << " Size: "<< width <<" pixels"<< "\n";  //here it is printed to the terminal
+			float dist = CalculateDist(keypoints[i].size);
+			cout << "Found object number: " << i <<" at  x: " << x << ", y: " << y << " Size: "<< width <<" pixels "<< "Distance: " << dist <<"\n";  //here it is printed to the terminal
 		}
 	}
 
@@ -209,4 +213,20 @@ void createTrackbars() {
 	createTrackbar("V_MAX", trackbarWindowName, &V_MAX, V_MAX, on_trackbar);
 
 
+}
+
+float CalculateDist(float d)
+{
+	//using a philips spc1000nc
+	//utilising a 1.3mp cmos https://www.1stvision.com/cameras/AVT/dataman/ibis5_a_1300_8.pdf
+	//and a lens with a F:2.6 apeture
+	//all in mm
+	const float FocalLength = 18.8; //based on field of view
+	const float F = 2.6;
+	const float BallSize = 60;
+	const float PixelSize = 00000.67; //These values are not accurate enough 
+	float VirtualBallsize = d * PixelSize;
+
+	float Dist = (BallSize * FocalLength) / VirtualBallsize;
+	return Dist;
 }
